@@ -1,16 +1,19 @@
-# Use an official Python image as the base
+# Use official lightweight Python image
 FROM python:3.9
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy all files from your repo into the container
+# Install system dependencies (including SQLite3)
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev
+
+# Copy the project files into the container
 COPY . /app
 
-# Install dependencies
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port 8080 (used by Railway)
+# Expose the correct port for Railway
 EXPOSE 8080
 
 # Start the application
