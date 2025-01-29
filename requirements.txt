@@ -5,3 +5,4 @@ yfinance
 matplotlib
 transformers
 alpaca-trade-api
+torch
