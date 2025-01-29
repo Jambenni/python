@@ -1,0 +1,7 @@
+Flask
+gunicorn
+pandas
+yfinance
+sqlite3
+matplotlib
+transformers
