@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 def get_db_connection():
-    db_path = '/Users/benjaminquinngiroud/Library/Mobile Documents/com~apple~CloudDocs/Python.nosync/Stocks.db'
+    db_path = "/app/Stocks.db"
     return sqlite3.connect(db_path)
 
 @app.template_filter('strftime')
