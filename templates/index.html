@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ stock.name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+        /* Global Styles */
+        body {
+            background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+            color: #e0e0e0;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+
+        }
+
+		/* General Scrollbar Styling */
+		::-webkit-scrollbar {
+		    width: 10px;
+		    height: 10px;
+		    background: linear-gradient(145deg, #0f2027, #203a43, #2c5364); /* Subtle background */
+		}
+
+		::-webkit-scrollbar-thumb {
+		    background: rgba(255, 255, 255, 0.4); /* Slightly brighter thumb */
+		    border-radius: 5px;
+		    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		    transition: background 0.3s ease;
+		}
+
+		::-webkit-scrollbar-thumb:hover {
+		    background: rgba(255, 255, 255, 0.6); /* Hover effect for thumb */
+		}
+
+		::-webkit-scrollbar-corner {
+		    background: rgba(255, 255, 255, 0.1); /* Matches the track background */
+		}
+
+		/* Horizontal Scrollbars */
+		#message-list::-webkit-scrollbar {
+		    height: 10px;
+		    background: rgba(255, 255, 255, 0.1); /* Subtle background for horizontal */
+		}
+
+		#message-list::-webkit-scrollbar-thumb {
+		    background: rgba(255, 255, 255, 0.4); /* Thumb for horizontal scrolling */
+		    border-radius: 5px;
+		}
+
+		#message-list::-webkit-scrollbar-thumb:hover {
+		    background: rgba(255, 255, 255, 0.6); /* Hover effect */
+		}
+
+		/* For Firefox */
+		.scroll-container {
+		    scrollbar-width: thin; /* Thin scrollbar for Firefox */
+		    scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.1); /* Thumb and track */
+		}
+
+
+        .container {
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            height: 100vh;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .search-bar {
+            grid-column: 1 / 4;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-bar input {
+            width: 60%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            font-size: 1.2em;
+            background: #ffffff10;
+            color: #e0e0e0;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .search-bar button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            background: linear-gradient(145deg, #ff7e5f, #feb47b);
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-bar button:hover {
+            transform: scale(1.1);
+        }
+
+        .stocks-list {
+            grid-column: 1 / 4;
+            grid-row: 2;
+            height: 50px;
+            display: flex;
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .stocks-list div {
+            min-width: 120px;
+            margin-right: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .stocks-list div:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .announcements {
+            grid-column: 3;
+            grid-row: 3 / 5;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .announcement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .announcement-header h3 {
+            margin: 0;
+            font-size: 2em;
+            background: linear-gradient(145deg, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .announcement-header button {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .announcement-header button.add-announcement {
+            background: #ff4f4f;
+            color: white;
+        }
+
+        .announcement-header button.add-message {
+            background: black;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .announcement-header button.add-stock {
+            background: yellow;
+            color: black;
+        }
+
+        .announcement-header button:hover {
+            transform: scale(1.1);
+        }
+
+        .chart {
+            grid-column: 1 / 3;
+            grid-row: 3;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .chart canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .trade-section {
+            grid-column: 1 / 3;
+            grid-row: 4;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .trade-section form input, .trade-section form select {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            background: #ffffff10;
+            color: #e0e0e0;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .trade-section button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            background: linear-gradient(145deg, #43cea2, #185a9d);
+            color: white;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .trade-section button:hover {
+            transform: scale(1.1);
+        }
+
+#message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+
+    /* Header */
+    .announcement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .stock-name {
+        font-size: 2.5em;
+        font-weight: bold;
+        cursor: pointer;
+        background: linear-gradient(145deg, #ff7e5f, #feb47b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+
+.buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: start;
+}
+
+.buttons button {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em;
+    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    color: white;
+}
+
+.buttons button.timer {
+    background: linear-gradient(145deg, #0f9b0f, #38ef7d); /* Green */
+}
+
+.buttons button.message {
+    background: linear-gradient(145deg, #3a7bd5, #3a6073); /* Blue */
+}
+
+.buttons button.stock {
+    background: linear-gradient(145deg, #feb47b, #ff7e5f); /* Orange */
+}
+
+#add-stock{
+	margin-right: 10px;
+}
+.buttons button.description {
+    background: linear-gradient(145deg, #43cea2, #185a9d); /* Teal */
+}
+
+.buttons button:hover {
+    transform: scale(1.2);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+
+    .add-announcement {
+        background: #ff4f4f;
+        color: #fff;
+    }
+
+    .add-message {
+        background: #333;
+        color: #fff;
+        border: 2px solid #fff;
+    }
+
+    .add-stock {
+        background: yellow;
+        color: black;
+    }
+
+    /* Relevance Score */
+ .announcement-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.announcement-rating,
+.incoming-announcement {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+}
+
+.announcement-rating {
+    border-left: 3px solid #43cea2;
+}
+
+.incoming-announcement {
+    border-left: 3px solid #ff5722;
+}
+
+.announcement-rating p,
+.incoming-announcement p {
+    font-size: 1.2em;
+    color: #e0e0e0;
+    margin-bottom: 5px;
+}
+
+.announcement-rating .score {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #43cea2;
+    margin-bottom: 5px;
+}
+
+.announcement-rating .action {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #43cea2;
+}
+
+.incoming-announcement h4 {
+    font-size: 1.5em;
+    color: #feb47b;
+    margin-bottom: 5px;
+}
+
+.incoming-announcement .timer {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #ff5722;
+}
+
+/* Messages Section */
+/* Messages Section */
+#message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: visible; /* No scroll inside the messages */
+}
+
+.announcement {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);    
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.announcement:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+}
+
+/* Message Header */
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.message-header .null {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ff7e5f;
+    padding: 5px 10px;
+    background: rgba(255, 127, 95, 0.1);
+    border: 2px solid #ff7e5f;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.message-header .cross {
+    font-size: 1.5em;
+    color: #ff4f4f;
+    cursor: pointer;
+    background: rgba(255, 79, 79, 0.1);
+    padding: 8px;
+    border-radius: 50%;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.message-header .cross:hover {
+    transform: scale(1.2);
+    background: rgba(255, 79, 79, 0.2);
+}
+
+/* Tick and Cross Icons */
+.tick,
+.cross {
+    font-size: 2.5em;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Titles */
+.titles h4 {
+    font-size: 1.5em;
+    color: #ff7e5f;
+    margin: 0;
+}
+
+.titles .date {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Meta Section */
+.meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+
+/* Content Section */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.titles {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titles h4 {
+    font-size: 1.2em;
+    color: #ff7e5f;
+    margin: 0;
+}
+
+.titles .date {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* List */
+.content ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.content ul li {
+    margin-bottom: 5px;
+    line-height: 1.6;
+    padding-left: 15px;
+    position: relative;
+}
+
+.content ul li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ff7e5f;
+    font-size: 1.5em;
+}
+
+/* Meta Section */
+.meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.meta .percentage {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #43cea2;
+}
+
+.swal2-popup-custom {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 900px; /* Wider popup */
+    width: 900px; /* Set explicit width */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.swal2-title {
+    color: #ff7e5f !important;
+    font-size: 1.8em; /* Slightly smaller title font */
+}
+
+.swal2-html-container {
+    color: #e0e0e0;
+    font-size: 1.1em; /* Smaller font for readability */
+    text-align: left;
+    line-height: 1.8; /* Increase line height for better readability */
+}
+
+/* Makes all input and textarea text black */
+input, textarea {
+    color: black !important;
+}
+
+
+/* If the input has predefined text, force it to black */
+input:focus, textarea:focus {
+    color: black !important;
+}
+
+
+
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <!-- Top Search Bar -->
+        <div class="search-bar">
+        	<!-- Stock Button -->
+	        <button id="add-stock" class="button stock">
+	            <i class="fas fa-chart-line"></i>
+	        </button>
+            <input type="text" placeholder="Search for a stock..." id="search-bar">
+            <button class="button">Search</button>
+        </div>
+
+        <!-- Horizontal Scrollable Stocks List -->
+        <div class="stocks-list" id="stocks-list">
+            <!-- Additional Stocks Here -->
+        </div>
+
+        <!-- Announcements Section -->
+<div class="announcements">
+    <!-- Header -->
+<div class="announcement-header">
+    <h3 id="stock-title" class="stock-name">{{ stock.name }}</h3>
+    <div class="buttons">
+        <!-- Timer Button -->
+        <button id="add-timer" class="button timer">
+            <i class="fas fa-clock"></i>
+        </button>
+        <!-- Message Button -->
+        <button id="add-message" class="button message">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+        <!-- Description Button -->
+        <button id="add-description" class="button description">
+            <i class="fas fa-info-circle"></i>
+        </button>
+    </div>
+</div>
+
+
+    <!-- Relevance Score -->
+	<div class="announcement-info">
+	    <!-- Relevance Score -->
+	<div class="announcement-rating">
+	    <p>Relevance Score</p>
+	    <div class="score">{{ mean_sentiment }}</div>
+	    <div class="action {{ 'buy' if buy_sell == 'Buy' else 'sell' }}">{{ buy_sell }}</div>
+	</div>
+
+
+<!-- Next Announcement -->
+<div class="incoming-announcement">
+    {% if latest_announcement %}
+        <p style="font-size: 1.2em; color: #ffffff; margin-bottom: 10px;">Next Announcement</p>
+        <h4 style="font-size: 1.5em; color: #FF7E5F; margin-bottom: 5px;">
+            {{ latest_announcement['title'] | title }}
+        </h4>
+        <div class="timer" id="timer" style="font-size: 1.3em; color: #43CEA2; font-weight: bold;">
+            {{ latest_announcement['date_time']|strftime('%d/%m/%Y %H:%M') }}
+        </div>
+    {% else %}
+        <p style="font-size: 1.2em; color: #ffffff;">No upcoming announcements.</p>
+    {% endif %}
+</div>
+
+
+
+	</div>
+
+
+    <!-- Messages -->
+    <div id="message-list">
+        <!-- Messages dynamically loaded here -->
+    </div>
+
+    <div id="message-loader" style="display: none; text-align: center; padding: 20px;">
+    <i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #43CEA2;"></i>
+	</div>
+
+</div>
+
+
+
+
+        <!-- Graph Section -->
+        <div class="chart">
+            <canvas id="stock-chart"></canvas>
+        </div>
+
+        <!-- Trade Section -->
+        <div class="trade-section">
+            <h3>Trade</h3>
+            <form>
+                <input type="text" placeholder="Symbol">
+                <input type="number" placeholder="Quantity">
+                <select>
+                    <option value="market">Market</option>
+                    <option value="limit">Limit</option>
+                </select>
+                <button type="submit" class="button">Place Order</button>
+            </form>
+        </div>
+    </div>
+    <script>
+
+async function fetchStockData(ticker) {
+    try {
+        console.log(`Fetching stock data for: ${ticker}`);
+
+        const response = await fetch(`/stock-data/${ticker}`);
+        if (!response.ok) {
+            console.error("Error fetching stock data:", response.statusText);
+            return null;
+        }
+        const jsonResponse = await response.json();
+
+        if (!jsonResponse || jsonResponse.length === 0) {
+            console.error(`No stock data available for ${ticker}.`);
+            return null;
+        }
+
+        // Filter data to only include the last 30 days
+        const now = new Date();
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setDate(now.getDate() - 30);
+
+        const filteredData = jsonResponse.filter(entry => {
+            const entryDate = new Date(entry.t);
+            return entryDate >= oneMonthAgo; // Only keep last 30 days
+        });
+
+        // Convert date strings to UNIX timestamps
+        const formattedData = filteredData.map(entry => ({
+            x: new Date(entry.t).getTime(),  // Convert date to UNIX timestamp
+            o: entry.o,
+            h: entry.h,
+            l: entry.l,
+            c: entry.c
+        }));
+
+        console.log("Formatted Stock Data (Last 30 Days):", formattedData);
+        return formattedData;
+    } catch (error) {
+        console.error("Error during fetch:", error);
+        return null;
+    }
+}
+
+
+async function initializeChart(ticker) {
+    try {
+        console.log(`Initializing chart for: ${ticker}`);
+
+        const ctx = document.getElementById("stock-chart").getContext("2d");
+
+        // Destroy previous chart instance if it exists
+        if (window.stockChartInstance) {
+            window.stockChartInstance.destroy();
+        }
+
+        // Fetch stock data
+        const stockData = await fetchStockData(ticker);
+        if (!stockData || stockData.length === 0) {
+            console.error(`No stock data available for ${ticker}, chart not updated.`);
+            return;
+        }
+
+        // Extract trading dates (removing weekends/holidays)
+        const tradingDates = stockData.map(entry => new Date(entry.x).toLocaleDateString("en-GB"));
+
+        // Configure Chart.js with category-based x-axis (removes gaps)
+        window.stockChartInstance = new Chart(ctx, {
+            type: "candlestick",
+            data: {
+                labels: tradingDates, // Use explicit trading dates
+                datasets: [{
+                    label: `${ticker} Stock Price`,
+                    data: stockData.map((entry, index) => ({
+                        x: index, // Use sequential index instead of time to remove gaps
+                        o: entry.o,
+                        h: entry.h,
+                        l: entry.l,
+                        c: entry.c
+                    })),
+                    borderColor: "rgba(255, 255, 255, 1)",
+                    backgroundColor: "rgba(0, 255, 0, 0.8)",
+                    borderWidth: 2,
+                    color: {
+                        up: "rgba(0, 200, 0, 1)",  // Strong Green for rising candles
+                        down: "rgba(200, 0, 0, 1)", // Strong Red for falling candles
+                        unchanged: "rgba(200, 200, 200, 1)"
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    duration: 1000,
+                    onComplete: () => console.log(`Chart rendering complete for ${ticker}.`),
+                    onProgress: progress => console.log("Chart rendering in progress:", progress)
+                },
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        type: "category", // Change from "time" to "category" to remove gaps
+                        labels: tradingDates, // Use trading dates as labels
+                        ticks: {
+                            color: "white",
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        ticks: { color: "white" }
+                    }
+                }
+            }
+        });
+
+        console.log(`✅ Chart updated for ${ticker} without gaps.`);
+    } catch (error) {
+        console.error("Error initializing chart:", error);
+    }
+}
+
+
+
+// Run the chart initialization when the page loads
+document.addEventListener("DOMContentLoaded", () => {
+    initializeChart();
+});
+
+
+
+// Red Button: Timer Announcement Pop-Up
+// ✅ Add Announcement Pop-Up (Red Button)
+document.getElementById("add-timer").addEventListener("click", () => {
+    const stockId = window.selectedStockId; // ✅ Use global selectedStockId
+
+    if (!stockId) {
+        Swal.fire({
+            title: "Error",
+            text: "Stock ID is missing. Please select a stock first.",
+            icon: "error",
+            confirmButtonText: "Close",
+            confirmButtonColor: "#d33",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: '<h2 style="color: #FF7E5F; text-align: center;">Add Announcement</h2>',
+        html: `
+            <form id="add-announcement-form" style="text-align: center; color: #e0e0e0;">
+                <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                    <label for="title" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Title:</label>
+                    <input type="text" id="title" class="swal2-input" placeholder="Enter announcement title..." style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" required>
+                </div>
+                <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                    <label for="date-time" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Date & Time:</label>
+                    <input type="datetime-local" id="date-time" class="swal2-input" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" required>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<span style="padding: 10px 20px;">Add</span>',
+        cancelButtonText: '<span style="padding: 10px 20px;">Cancel</span>',
+        confirmButtonColor: "#43CEA2",
+        cancelButtonColor: "#FF7E5F",
+        width: '800px', // Wider popup
+        preConfirm: () => {
+            const title = document.getElementById("title").value.trim();
+            const dateTime = document.getElementById("date-time").value.trim();
+
+            if (!title || !dateTime) {
+                Swal.showValidationMessage("Please fill out all fields.");
+                return false;
+            }
+
+            return fetch("/add_announcement", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stock_id: stockId, title, date_time: dateTime }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error adding the announcement.");
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+                console.error(error);
+            });
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "Announcement Added!",
+                icon: "success",
+                text: "The announcement has been successfully added.",
+                confirmButtonColor: "#4caf50",
+            });
+        }
+    });
+});
+
+
+// ✅ Add Message Pop-Up (Black Button)
+document.getElementById("add-message").addEventListener("click", () => {
+    const stockId = window.selectedStockId; // ✅ Use global stock ID
+
+    if (!stockId) {
+        Swal.fire({
+            title: "Error",
+            text: "Stock ID is missing. Please select a stock first.",
+            icon: "error",
+            confirmButtonText: "Close",
+            confirmButtonColor: "#d33",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: '<h2 style="color: #FF7E5F;">Add a Message</h2>',
+        html: `
+            <form id="add-message-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; color: #e0e0e0; text-align: left; width: 100%; max-width: 600px; margin: auto;">
+                <div style="grid-column: span 2;">
+                    <label for="message-date" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Date:</label>
+                    <input type="date" id="message-date" class="swal2-input" style="width: 100%; font-size: 1em; color: #000; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="message-title" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Title:</label>
+                    <input type="text" id="message-title" class="swal2-input" placeholder="Enter message title..." style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="message-source" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Source:</label>
+                    <input type="text" id="message-source" class="swal2-input" placeholder="Enter source..." style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="start-price" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Start Price:</label>
+                    <input type="number" id="start-price" class="swal2-input" placeholder="Enter start price..." step="0.01" style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="end-price" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">End Price:</label>
+                    <input type="number" id="end-price" class="swal2-input" placeholder="Enter end price..." step="0.01" style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div style="grid-column: span 2;">
+                    <label for="message-content" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Content:</label>
+                    <textarea id="message-content" class="swal2-textarea" placeholder="Enter message content..." 
+                        style="width: 100%; height: 200px; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; resize: none; border: 1px solid #ccc;" 
+                        required></textarea>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<span style="padding: 10px 20px; font-size: 1em; font-weight: bold;">Add</span>',
+        cancelButtonText: '<span style="padding: 10px 20px; font-size: 1em; font-weight: bold;">Cancel</span>',
+        confirmButtonColor: "#43CEA2",
+        cancelButtonColor: "#FF7E5F",
+        customClass: {
+            popup: "swal2-modern-popup",
+        },
+        width: '850px', // Wider popup
+        padding: '30px', // Extra padding for better layout
+        preConfirm: () => {
+            const date = document.getElementById("message-date").value;
+            const title = document.getElementById("message-title").value;
+            const content = document.getElementById("message-content").value;
+            const source = document.getElementById("message-source").value;
+            const startPrice = parseFloat(document.getElementById("start-price").value);
+            const endPrice = parseFloat(document.getElementById("end-price").value);
+
+            if (!date || !title || !content || !source || isNaN(startPrice) || isNaN(endPrice)) {
+                Swal.showValidationMessage("Please fill out all fields correctly.");
+                return false;
+            }
+
+            return fetch("/add_message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    stock_id: stockId,
+                    title,
+                    content,
+                    source,
+                    start_price: startPrice,
+                    end_price: endPrice,
+                    date_time: date,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error adding the message.");
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+                console.error(error);
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "Message Added!",
+                icon: "success",
+                text: "Your message has been successfully added.",
+                confirmButtonColor: "#4caf50",
+            });
+        }
+    });
+});
+// Yellow Button: Add Stock Pop-Up
+document.getElementById("add-stock").addEventListener("click", () => {
+    Swal.fire({
+    title: '<h2 style="color: #FFA500; margin-bottom: 20px; text-align: center;">Add a Stock</h2>',
+    html: `
+        <form id="add-stock-form" style="text-align: center; color: #e0e0e0;">
+            <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                <label for="stock-name" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Stock Name:</label>
+                <input type="text" id="stock-name" class="swal2-input" placeholder="e.g., AT&T Inc" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" required>
+            </div>
+            <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                <label for="stock-symbol" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Symbol:</label>
+                <input type="text" id="stock-symbol" class="swal2-input" placeholder="e.g., T" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" required>
+            </div>
+        </form>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<span style="padding: 10px 20px;">Add</span>',
+    cancelButtonText: '<span style="padding: 10px 20px;">Cancel</span>',
+    confirmButtonColor: "#43CEA2",
+    cancelButtonColor: "#FF7E5F",
+    width: '800px', // Wider popup
+    customClass: {
+        popup: 'swal2-no-scroll',
+    },
+        preConfirm: () => {
+            const name = document.getElementById("stock-name").value.trim();
+            const symbol = document.getElementById("stock-symbol").value.trim().toUpperCase();
+
+            if (!name || !symbol) {
+                Swal.showValidationMessage("Please fill in all fields");
+                return false;
+            }
+
+            // Send data to the server
+            return fetch("/add_stock", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, symbol })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || "Error adding the stock");
+                    });
+                }
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Stock Added!',
+                icon: 'success',
+                text: 'The stock has been successfully added to your dashboard.',
+                confirmButtonColor: '#4caf50'
+            });
+
+            // Optionally refresh the page or update the stock list dynamically
+            location.reload(); // Reload to display the new stock
+        }
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const stockId = {{ stock.id }}; // Replace with dynamic stock ID from the server
+    loadMessages(stockId);
+});
+
+
+// ✅ Add Stock Description Pop-Up
+document.getElementById("add-description").addEventListener("click", () => {
+    const stockId = window.selectedStockId; // ✅ Use global stock ID
+
+    if (!stockId) {
+        Swal.fire({
+            title: "Error",
+            text: "Stock ID is missing. Please select a stock first.",
+            icon: "error",
+            confirmButtonText: "Close",
+            confirmButtonColor: "#d33",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: '<h2 style="color: #1E90FF;">Add Stock Description</h2>',
+        html: `
+            <form id="add-description-form" style="text-align: center; color: #e0e0e0;">
+                <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                    <label for="description" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Description:</label>
+                    <textarea id="description" class="swal2-textarea" placeholder="Enter stock description..." style="width: 100%; height: 200px; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" required></textarea>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<span style="padding: 10px 20px;">Save</span>',
+        cancelButtonText: '<span style="padding: 10px 20px;">Cancel</span>',
+        confirmButtonColor: "#43CEA2",
+        cancelButtonColor: "#FF7E5F",
+        width: '800px', // Wider popup
+        customClass: {
+            popup: 'swal2-no-scroll',
+        },
+        preConfirm: () => {
+            const description = document.getElementById("description").value.trim();
+
+            if (!description) {
+                Swal.showValidationMessage("Please provide a description.");
+                return false;
+            }
+
+            return fetch("/add_description", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stock_id: stockId, description }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error saving description.");
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+                console.error(error);
+            });
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "Description Added!",
+                icon: "success",
+                text: "The stock description has been saved successfully.",
+                confirmButtonColor: "#4caf50",
+            });
+        }
+    });
+});
+
+async function loadStocks() {
+    try {
+        const response = await fetch("/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "" }) // Fetch all stocks
+        });
+        const stocks = await response.json();
+
+        const stockList = document.getElementById("stocks-list");
+        stockList.innerHTML = ""; // Clear existing stocks
+
+        if (stocks.length === 0) {
+            console.error("No stocks found.");
+            return;
+        }
+
+        let firstStock = stocks[0]; // ✅ Get the first stock in the list
+
+        stocks.forEach(stock => {
+            const stockDiv = document.createElement("div");
+            stockDiv.textContent = stock.name || stock.symbol;
+            stockDiv.dataset.symbol = stock.symbol; // Store symbol for click event
+            stockDiv.classList.add("stock-item"); // Add a class for styling and event binding
+
+            // Attach click event to fetch stock details and update the UI
+            stockDiv.addEventListener("click", () => updateStockDisplay(stock.symbol));
+
+            stockList.appendChild(stockDiv);
+        });
+
+        // ✅ Auto-load the first stock visually and functionally
+        updateStockDisplay(firstStock.symbol);
+
+    } catch (error) {
+        console.error("Error loading stocks:", error);
+    }
+}
+
+
+
+
+// Store selected stock globally
+let selectedStockId = null;
+
+async function updateStockData(symbol) {
+    try {
+        console.log(`Fetching stock data for: ${symbol}`);
+
+        // Fetch stock info
+        const response = await fetch(`/stock-info/${symbol}`);
+        if (!response.ok) throw new Error("Error fetching stock info");
+
+        const stockData = await response.json();
+
+        if (stockData.error) {
+            console.error("Stock not found:", stockData.error);
+            return;
+        }
+
+        // ✅ Update the global stockId variable
+        window.selectedStockId = stockData.id;
+
+        console.log(`✅ Updated selectedStockId: ${window.selectedStockId}`);
+
+        // ✅ Clear messages immediately
+        const messageList = document.getElementById("message-list");
+        messageList.innerHTML = `
+            <div class="loading-messages" style="text-align: center; padding: 20px; color: #aaa;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2em;"></i>
+                <p>Loading messages...</p>
+            </div>
+        `;
+
+        // ✅ Load messages for new stock
+        loadMessages(window.selectedStockId);
+
+    } catch (error) {
+        console.error("Error updating stock data:", error);
+    }
+}
+
+
+let offset = 0; // Track how many messages are loaded
+const limit = 10; // Messages to load per request
+let isLoading = false; // Prevent multiple simultaneous requests
+let allMessagesLoaded = false; // Stop when all messages are retrieved
+
+async function loadMessages(stockId, isFirstLoad = false) {
+    if (!stockId || isLoading || allMessagesLoaded) return;
+
+    isLoading = true; // Prevent multiple fetch requests
+    showLoader(); // Show loader while fetching data
+
+    try {
+        console.log(`Fetching messages for stock ID: ${stockId}, offset: ${offset}`);
+
+        const response = await fetch(`/get_messages?stock_id=${stockId}&offset=${offset}&limit=${limit}`);
+        if (!response.ok) throw new Error("Error fetching messages");
+
+        const messages = await response.json();
+        const messageList = document.getElementById("message-list");
+
+        if (isFirstLoad) {
+            messageList.innerHTML = ""; // ✅ Clear old messages only on first load
+            offset = 0; // Reset offset for new stock
+            allMessagesLoaded = false; // Allow new messages to be loaded
+        }
+
+        // If no messages are returned, stop further requests
+        if (messages.length === 0) {
+            allMessagesLoaded = true;
+            hideLoader();
+            return;
+        }
+
+        messages.forEach((message) => {
+            const startPrice = parseFloat(message.start_price);
+            const endPrice = parseFloat(message.end_price);
+            const percentageChange = (((endPrice - startPrice) / startPrice) * 100).toFixed(2);
+            const isPositive = percentageChange > 0;
+
+            // Format date to DD/MM/YYYY
+            const formattedDate = new Date(message.date_time).toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            });
+
+            // ✅ Use up/down arrow icons instead of check/cross
+            const pertinencyIcon = message.pertinency === 1
+                ? '<i class="fas fa-arrow-up" style="font-size: 2.5em; color: #43cea2; text-shadow: 0 0 10px #43cea2;"></i>'
+                : '<i class="fas fa-arrow-down" style="font-size: 2.5em; color: #ff4f4f; text-shadow: 0 0 10px #ff4f4f;"></i>';
+
+            // ✅ Styling for the pertinency rating (green for positive, red for negative)
+            const pertinencyStyle = `
+                font-size: 3em;
+                font-weight: bold;
+                color: ${isPositive ? "#43cea2" : "#ff4f4f"};
+                text-shadow: 0 0 15px ${isPositive ? "#43cea2" : "#ff4f4f"};
+                margin-right: 10px;
+            `;
+
+            // ✅ Icon for percentage change (green for up, red for down)
+            const percentageIcon = isPositive
+                ? '<i class="fas fa-chart-line" style="color: #43cea2;"></i>'
+                : '<i class="fas fa-chart-line" style="color: #ff4f4f;"></i>';
+
+            // ✅ Create message element
+            const messageDiv = document.createElement("div");
+            messageDiv.className = "announcement";
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="pertinency" style="${pertinencyStyle}">${message.sentiment} / 5</span>
+                    ${pertinencyIcon}
+                </div>
+                <div class="content">
+                    <div class="titles">
+                        <h4>${message.title}</h4>
+                        <p class="date">${formattedDate}</p>
+                    </div>
+                    <p>${message.content.length > 150 ? message.content.substring(0, 150) + "..." : message.content}</p>
+                    <div class="meta">
+                        <p class="percentage" style="color: ${isPositive ? "#43cea2" : "#ff4f4f"};">
+                            ${percentageIcon} ${percentageChange}%
+                        </p>
+                        <p class="meta-item source"><i class="fas fa-newspaper"></i> ${message.source}</p>
+                        <p class="meta-item start-price"><i class="fas fa-dollar-sign"></i> $${message.start_price}</p>
+                        <p class="meta-item end-price"><i class="fas fa-dollar-sign"></i> $${message.end_price}</p>
+                    </div>
+                </div>
+            `;
+
+            // ✅ Add click event to open message modal
+            messageDiv.addEventListener("click", () => openMessageModal(message, percentageChange));
+            messageList.appendChild(messageDiv);
+        });
+
+        offset += messages.length; // Increase offset for next batch
+
+    } catch (error) {
+        console.error("Error loading messages:", error);
+    } finally {
+        hideLoader(); // Hide loader after fetching
+        isLoading = false;
+    }
+}
+
+// ✅ **Show Loading Spinner**
+function showLoader() {
+    const loader = document.getElementById("message-loader");
+    if (loader) loader.style.display = "block";
+}
+
+// ✅ **Hide Loading Spinner**
+function hideLoader() {
+    const loader = document.getElementById("message-loader");
+    if (loader) loader.style.display = "none";
+}
+
+// ✅ **Detect Scroll to Load More Messages**
+window.addEventListener("scroll", () => {
+    const messageContainer = document.getElementById("message-list");
+    if (!messageContainer) return;
+
+    // Check if the user has scrolled to the bottom
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        loadMessages(window.selectedStockId);
+    }
+});
+
+
+
+
+
+function openMessageModal(message, percentageChange) {
+    // Format date to DD/MM/YYYY
+    const formattedDate = new Date(message.date_time).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+
+    // Fixing sentence continuity issue by ensuring content is split correctly
+    const fullContent = message.content
+        .split("\n") // Instead of "-", use newline split to avoid breaking sentences
+        .filter((item) => item.trim() !== "")
+        .map((item) => {
+            // Extract the title before the colon (e.g., "Revenue Growth:")
+            const match = item.match(/^(.+?):\s*(.+)$/);
+            if (match) {
+                const title = match[1].replace(/^-/, "").trim(); // ✅ Remove leading "-" if it exists
+                const description = match[2]; // Remaining sentence
+
+                return `<li>
+                    <strong style="color: #43CEA2;">${title}:</strong> 
+                    ${description}
+                </li>`;
+            } else {
+                // If no title is found (fallback), display as normal
+                return `<li>${item.trim().replace(/^-/, "")}</li>`; // ✅ Remove "-" from normal lines
+            }
+        })
+        .join("");
+
+    Swal.fire({
+        title: message.title,
+        html: `
+			<button id="edit-message" class="swal2-confirm swal2-styled" 
+			    style="position: absolute; top: 30px; font-size: 1.2em; left: 30px; background-color: #43CEA2; border-radius: 8px; padding: 8px 12px; border: none; cursor: pointer;">
+			    <i class="fas fa-edit"></i>
+			</button>
+
+			<div style="text-align: left; font-size: 1.2em; color: #e0e0e0;">
+			    <p><strong>Date:</strong> ${formattedDate}</p>
+			    <ul>${fullContent}</ul>
+			    <div class="meta" style="display: flex; justify-content: space-between; margin-top: 20px;">
+			        <p><i class="fas fa-chart-line"></i> ${percentageChange}%</p>
+			        <p><i class="fas fa-newspaper"></i> Source: ${message.source}</p>
+			        <p><i class="fas fa-dollar-sign"></i> Start Price: $${message.start_price}</p>
+			        <p><i class="fas fa-dollar-sign"></i> End Price: $${message.end_price}</p>
+			    </div>
+			</div>
+        `,
+        showCloseButton: true,
+        showConfirmButton: false,
+        customClass: {
+            popup: "swal2-popup-custom",
+        },
+    });
+
+    // Add click event for the edit button
+    document.getElementById("edit-message").addEventListener("click", () => {
+        openEditMessageModal(message);
+    });
+}
+
+function openEditMessageModal(message) {
+    console.log("Editing Message:", message); // Debugging
+
+    if (!message.id) {
+        console.error("Error: Message ID is undefined.");
+        Swal.fire({
+            title: "Error",
+            text: "Message ID is missing. Please try again.",
+            icon: "error",
+            confirmButtonText: "Close",
+            confirmButtonColor: "#d33",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: '<h2 style="color: #FF7E5F;">Edit Message</h2>',
+        html: `
+            <form id="edit-message-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; color: #e0e0e0; text-align: left; width: 100%; max-width: 600px; margin: auto;">
+                <input type="hidden" id="message-id" value="${message.id}">
+                <div style="grid-column: span 2;">
+                    <label for="message-date" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Date:</label>
+                    <input type="date" id="message-date" value="${message.date_time ? message.date_time.split('T')[0] : ''}" class="swal2-input" style="width: 100%; font-size: 1em; color: #000; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="message-title" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Title:</label>
+                    <input type="text" id="message-title" value="${message.title || ''}" class="swal2-input" placeholder="Enter message title..." style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="message-source" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Source:</label>
+                    <input type="text" id="message-source" value="${message.source || ''}" class="swal2-input" placeholder="Enter source..." style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="start-price" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Start Price:</label>
+                    <input type="number" id="start-price" value="${message.start_price || ''}" class="swal2-input" placeholder="Enter start price..." step="0.01" style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div>
+                    <label for="end-price" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">End Price:</label>
+                    <input type="number" id="end-price" value="${message.end_price || ''}" class="swal2-input" placeholder="Enter end price..." step="0.01" style="width: 100%; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px solid #ccc;" required>
+                </div>
+                <div style="grid-column: span 2;">
+                    <label for="message-content" style="font-weight: bold; color: #43CEA2; font-size: 1em; margin-bottom: 5px; display: block;">Content:</label>
+                    <textarea id="message-content" class="swal2-textarea" placeholder="Enter message content..." 
+                        style="width: 100%; height: 200px; font-size: 1em; background: #f8f8f8; border-radius: 8px; padding: 10px; resize: none; border: 1px solid #ccc;" 
+                        required>${message.content || ''}</textarea>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<span style="padding: 10px 20px; font-size: 1em; font-weight: bold;">Save Changes</span>',
+        cancelButtonText: '<span style="padding: 10px 20px; font-size: 1em; font-weight: bold;">Cancel</span>',
+        confirmButtonColor: "#43CEA2",
+        cancelButtonColor: "#FF7E5F",
+        customClass: {
+            popup: "swal2-modern-popup",
+        },
+        width: '850px',
+        padding: '30px',
+        preConfirm: () => {
+            const messageId = document.getElementById("message-id").value;
+            const updatedMessage = {
+                date_time: document.getElementById("message-date").value,
+                title: document.getElementById("message-title").value,
+                content: document.getElementById("message-content").value,
+                source: document.getElementById("message-source").value,
+                start_price: parseFloat(document.getElementById("start-price").value),
+                end_price: parseFloat(document.getElementById("end-price").value),
+            };
+
+            if (!messageId) {
+                Swal.showValidationMessage("Message ID is missing. Please try again.");
+                return false;
+            }
+
+            return fetch(`/update_message/${messageId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedMessage),
+            })
+            .then((response) => {
+                if (!response.ok) throw new Error("Error updating the message.");
+                return response.json();
+            })
+            .catch((error) => {
+                Swal.showValidationMessage(error.message);
+                console.error(error);
+            });
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "Message Updated!",
+                icon: "success",
+                text: "Your changes have been saved.",
+                confirmButtonColor: "#43CEA2",
+            });
+
+            // Reload messages to reflect the change
+            loadMessages(window.selectedStockId);
+        }
+    });
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadStocks();
+});
+
+// ✅ Dynamically update description on stock title click
+document.getElementById("stock-title").addEventListener("click", async () => {
+    try {
+        // Ensure stockId is correctly retrieved from the global state
+        const stockId = window.selectedStockId;
+        console.log(`Fetching description for stock ID: ${stockId}`); // Debugging
+
+        if (!stockId) {
+            console.error("❌ Stock ID is undefined.");
+            Swal.fire({
+                title: "Error",
+                text: "Stock ID is missing. Please select a stock first.",
+                icon: "error",
+                confirmButtonText: "Close",
+                confirmButtonColor: "#d33",
+            });
+            return;
+        }
+
+        // Fetch the description from the database
+        const response = await fetch(`/get_description?stock_id=${stockId}`);
+        if (!response.ok) {
+            throw new Error("Error fetching stock description");
+        }
+
+        const data = await response.json();
+        const description = data.description || "No description available for this company.";
+
+        console.log("Stock Description Received:", description); // Debugging
+
+        // Format the description for better readability
+        const formattedDescription = description
+            .split(/(?=\b[A-Z][a-z]+\s[A-Za-z]+:)/g) // Split at titles like "Core Focus:"
+            .map((section) => {
+                const [title, ...content] = section.split(":");
+                return `<p style="margin: 10px 0;"><strong style="color: #FF7E5F;">${title}:</strong> ${content.join(":").trim()}</p>`;
+            })
+            .join("");
+
+        // Show the formatted description in a SweetAlert popup
+        Swal.fire({
+            title: document.getElementById("stock-title").textContent, // ✅ Use dynamic stock title
+            html: `
+                <div style="text-align: left; font-size: 1em; color: #e0e0e0; line-height: 1.6; padding-bottom: 50px;">
+                    ${formattedDescription}
+                </div>
+
+				<div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+
+				    <!-- ✅ Update Button (Same Height as Close Button) -->
+				    <button id="edit-description" style="
+				        color: #43CEA2;
+				        border: none;
+				        border-radius: 6px;
+				        cursor: pointer;
+				        font-size: 2em;
+				        display: flex;
+				        align-items: center;
+				        justify-content: center;
+				        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+				        background: transparent;
+				    ">
+				        <i class="fas fa-edit"></i>
+				    </button>
+
+				    <!-- ✅ Close Button -->
+				    <button class="swal2-confirm swal2-styled" style="
+				        background-color: #43CEA2;
+				        color: #fff;
+				        border: none;
+				        padding: 10px 20px; /* ✅ Matching height */
+				        border-radius: 6px;
+				        cursor: pointer;
+				        font-size: 1em;
+				        display: flex;
+				        align-items: center;
+				        justify-content: center;
+				        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+				    " onclick="Swal.close()">
+				        Close
+				    </button>
+
+				</div>
+
+            `,
+            showConfirmButton: false, // ✅ Hide default confirm button (handled manually)
+            customClass: {
+                popup: "swal2-popup-custom",
+            },
+        });
+
+        // Attach event listener for the update button
+        document.getElementById("edit-description").addEventListener("click", () => {
+            openEditDescriptionModal(stockId, description);
+        });
+
+    } catch (error) {
+        console.error("❌ Error fetching stock description:", error);
+        Swal.fire({
+            title: "Error",
+            text: "Unable to fetch the company description.",
+            icon: "error",
+            confirmButtonText: "Close",
+            confirmButtonColor: "#d33",
+        });
+    }
+});
+
+
+// ✅ Open Edit Stock Description Modal
+function openEditDescriptionModal(stockId, currentDescription) {
+    Swal.fire({
+        title: '<h2 style="color: #1E90FF;">Edit Stock Description</h2>',
+        html: `
+            <form id="edit-description-form" style="text-align: center; color: #e0e0e0;">
+                <div style="margin-bottom: 15px; text-align: left; width: 100%; max-width: 600px; margin: 0 auto;">
+                    <label for="edit-description" style="font-weight: bold; color: #43CEA2; display: block; margin-bottom: 5px;">Description:</label>
+                    <textarea id="edit-description" class="swal2-textarea" 
+                        placeholder="Enter stock description..." 
+                        style="width: 100%; height: 200px; padding: 10px; font-size: 1rem; border: 1px solid #43CEA2; border-radius: 8px;" 
+                        required>${currentDescription}</textarea>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<span style="padding: 10px 20px;">Save</span>',
+        cancelButtonText: '<span style="padding: 10px 20px;">Cancel</span>',
+        confirmButtonColor: "#43CEA2",
+        cancelButtonColor: "#FF7E5F",
+        width: '800px',
+        customClass: {
+            popup: 'swal2-no-scroll',
+        },
+        preConfirm: () => {
+            const newDescription = document.getElementById("edit-description").value.trim();
+
+            if (!newDescription) {
+                Swal.showValidationMessage("Please provide a description.");
+                return false;
+            }
+
+            return fetch(`/update_description/${stockId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ description: newDescription }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error updating description.");
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+                console.error(error);
+            });
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "Description Updated!",
+                icon: "success",
+                text: "The stock description has been successfully updated.",
+                confirmButtonColor: "#4caf50",
+            });
+        }
+    });
+}
+
+async function updateStockDisplay(symbol) {
+    try {
+        console.log(`Fetching data for stock: ${symbol}`);
+
+        // Fetch stock info from backend
+        const response = await fetch(`/stock-info/${symbol}`);
+        if (!response.ok) {
+            console.error("Stock info not found");
+            return;
+        }
+
+        const stockData = await response.json();
+        console.log("Stock Data Received:", stockData);
+
+        if (stockData.error) {
+            console.error(stockData.error);
+            return;
+        }
+
+        // ✅ Ensure elements exist before modifying
+        const stockTitle = document.getElementById("stock-title");
+        const announcementContainer = document.querySelector(".incoming-announcement");
+        const relevanceScore = document.querySelector(".announcement-rating .score");
+        const buySellIndicator = document.querySelector(".announcement-rating .action");
+
+        if (stockTitle) {
+            stockTitle.textContent = stockData.name;
+        } else {
+            console.error("❌ Element 'stock-title' not found!");
+        }
+
+        if (announcementContainer) {
+            if (stockData.latest_announcement) {
+                announcementContainer.innerHTML = `
+                    <p style="font-size: 1.2em; color: #ffffff; margin-bottom: 10px;">Next Announcement</p>
+                    <h4 style="font-size: 1.5em; color: #FF7E5F; margin-bottom: 5px;">
+                        ${stockData.latest_announcement.title}
+                    </h4>
+                    <div class="timer" id="timer" style="font-size: 1.3em; color: #43CEA2; font-weight: bold;">
+                        ${new Date(stockData.latest_announcement.date_time).toLocaleString("fr-FR")}
+                    </div>
+                `;
+            } else {
+                announcementContainer.innerHTML = "<p style='color: #ffffff;'>No upcoming announcements.</p>";
+            }
+        } else {
+            console.error("❌ Element 'incoming-announcement' not found!");
+        }
+
+        if (relevanceScore) {
+            relevanceScore.textContent = stockData.mean_sentiment;
+        } else {
+            console.error("❌ Element 'relevance-score' not found!");
+        }
+
+        if (buySellIndicator) {
+            buySellIndicator.textContent = stockData.buy_sell;
+            buySellIndicator.className = `action ${stockData.buy_sell.toLowerCase()}`;
+        } else {
+            console.error("❌ Element 'buy-sell' not found!");
+        }
+
+        // ✅ Update the global stock ID
+        window.selectedStockId = stockData.id;
+        console.log(`✅ Updated selectedStockId: ${window.selectedStockId}`);
+
+        // ✅ Reset and load messages for new stock (lazy loading enabled)
+        offset = 0; // Reset offset for pagination
+        allMessagesLoaded = false; // Allow more messages to be fetched
+        loadMessages(window.selectedStockId, true); // Load first batch of messages
+
+        // ✅ Update chart dynamically
+        initializeChart(symbol);
+
+    } catch (error) {
+        console.error("Error updating stock:", error);
+    }
+}
+
+
+
+
+
+    </script>
+</body>
+</html>
+
