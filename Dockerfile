@@ -1,20 +1,21 @@
-# Use a Python image
-FROM python:3.10
+# Use an official Python runtime as a parent image
+FROM python:3.9
 
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy files
-COPY . .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Update system and install dependencies
-RUN apt-get update && apt-get install -y python3 python3-pip
-
-# Install Python dependencies separately
+# Install any needed packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the correct port
-EXPOSE 5000
+# Expose port 8080
+EXPOSE 8080
 
-# Start the app properly
-CMD ["python3", "app.py"]
+# Define environment variable
+ENV FLASK_APP=app.py
+
+# Run the application
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8080", "app:app"]
+
