@@ -4,3 +4,4 @@ pandas
 yfinance
 matplotlib
 transformers
+alpaca-trade-api
