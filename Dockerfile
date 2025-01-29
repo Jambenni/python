@@ -1,18 +1,20 @@
-# Use an official Python runtime as the base image
+# Use a Python image
 FROM python:3.10
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy all project files
+# Copy files
 COPY . .
 
-# Install dependencies correctly
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# Update system and install dependencies
+RUN apt-get update && apt-get install -y python3 python3-pip
 
-# Expose the application port
+# Install Python dependencies separately
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the correct port
 EXPOSE 5000
 
-# Start the application
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+# Start the app properly
+CMD ["python3", "app.py"]
