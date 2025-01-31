@@ -21,6 +21,17 @@
 
         }
 
+		/* Makes all input and textarea text black */
+		/* Apply to all inputs and textareas EXCEPT the search bar */
+		input:not(#search-bar), textarea {
+		    color: black !important;
+		}
+
+		/* Force color to remain black when focused */
+		input:not(#search-bar):focus, textarea:focus {
+		    color: black !important;
+		}
+
 		/* General Scrollbar Styling */
 		::-webkit-scrollbar {
 		    width: 10px;
@@ -93,7 +104,7 @@
             outline: none;
             font-size: 1.2em;
             background: #ffffff10;
-            color: #e0e0e0;
+            color: white;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
@@ -125,19 +136,27 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        .stocks-list div {
-            min-width: 120px;
-            margin-right: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #e0e0e0;
-            cursor: pointer;
-            transition: transform 0.3s, background 0.3s;
-        }
+.stocks-list div {
+    min-width: 120px;
+    height: 30px;  /* Ensures all boxes have the same height */
+    display: flex; /* Makes text align properly */
+    align-items: center; /* Centers text vertically */
+    justify-content: center; /* Centers text horizontally */
+    margin-right: 15px;
+    padding: 10px 15px; /* Adjusted padding to fit text */
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s;
+    white-space: nowrap; /* Prevents text from wrapping */
+    overflow: hidden; /* Hides overflow text */
+    text-overflow: ellipsis; /* Adds "..." if text is too long */
+}
+
 
         .stocks-list div:hover {
             transform: translateY(-5px);
@@ -573,17 +592,62 @@
     line-height: 1.8; /* Increase line height for better readability */
 }
 
-/* Makes all input and textarea text black */
-input, textarea {
-    color: black !important;
+/* Search Results Container */
+.search-results {
+    position: absolute;
+    top: 75px; /* Moved lower from 60px */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 600px;
+    background: rgba(15, 15, 20, 0.85); /* Dark semi-transparent background */
+    border-radius: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    z-index: 1000;
+    display: none;
+    transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
 }
 
-
-/* If the input has predefined text, force it to black */
-input:focus, textarea:focus {
-    color: black !important;
+/* Individual Search Item */
+.search-item {
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #00ffff; /* Neon cyan color */
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
+/* Hover Effect */
+.search-item:hover {
+    background: rgba(0, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+
+/* Smooth Fade-In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Show search results with animation */
+.search-results.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
 
 
 </style>
@@ -592,14 +656,17 @@ input:focus, textarea:focus {
 <body>
     <div class="container">
         <!-- Top Search Bar -->
-        <div class="search-bar">
-        	<!-- Stock Button -->
-	        <button id="add-stock" class="button stock">
-	            <i class="fas fa-chart-line"></i>
-	        </button>
-            <input type="text" placeholder="Search for a stock..." id="search-bar">
-            <button class="button">Search</button>
-        </div>
+
+<div class="search-bar">
+    <button id="add-stock" class="button stock">
+        <i class="fas fa-chart-line"></i>
+    </button>
+    <input type="text" placeholder="Search for a stock..." id="search-bar" oninput="searchStocks()">
+    
+    <!-- Search Results -->
+    <div id="search-results" class="search-results"></div>
+</div>
+
 
         <!-- Horizontal Scrollable Stocks List -->
         <div class="stocks-list" id="stocks-list">
@@ -1163,8 +1230,14 @@ async function loadStocks() {
 
         stocks.forEach(stock => {
             const stockDiv = document.createElement("div");
-            stockDiv.textContent = stock.name || stock.symbol;
+
+            // ✅ Truncate name to 15 characters and add "..." if it's longer
+            let stockName = stock.name || stock.symbol;
+            let displayName = stockName.length > 15 ? stockName.substring(0, 15) + "..." : stockName;
+
+            stockDiv.textContent = displayName;
             stockDiv.dataset.symbol = stock.symbol; // Store symbol for click event
+            stockDiv.title = stockName; // ✅ Tooltip shows full name on hover
             stockDiv.classList.add("stock-item"); // Add a class for styling and event binding
 
             // Attach click event to fetch stock details and update the UI
@@ -1180,7 +1253,6 @@ async function loadStocks() {
         console.error("Error loading stocks:", error);
     }
 }
-
 
 
 
@@ -1272,9 +1344,10 @@ async function loadMessages(stockId, isFirstLoad = false) {
             });
 
             // ✅ Use up/down arrow icons instead of check/cross
-            const pertinencyIcon = message.pertinency === 1
-                ? '<i class="fas fa-arrow-up" style="font-size: 2.5em; color: #43cea2; text-shadow: 0 0 10px #43cea2;"></i>'
-                : '<i class="fas fa-arrow-down" style="font-size: 2.5em; color: #ff4f4f; text-shadow: 0 0 10px #ff4f4f;"></i>';
+			const pertinencyIcon = percentageChange > 0
+			    ? '<i class="fas fa-arrow-up" style="font-size: 2.5em; color: #43cea2; text-shadow: 0 0 10px #43cea2;"></i>'
+			    : '<i class="fas fa-arrow-down" style="font-size: 2.5em; color: #ff4f4f; text-shadow: 0 0 10px #ff4f4f;"></i>';
+
 
             // ✅ Styling for the pertinency rating (green for positive, red for negative)
             const pertinencyStyle = `
@@ -1774,7 +1847,81 @@ async function updateStockDisplay(symbol) {
 }
 
 
+let searchTimeout; // Timeout to delay search execution
 
+async function searchStocks() {
+    const query = document.getElementById("search-bar").value.trim();
+    const resultsContainer = document.getElementById("search-results");
+
+    // Clear timeout if user is still typing
+    clearTimeout(searchTimeout);
+
+    if (!query) {
+        hideSearchResults();
+        return;
+    }
+
+    searchTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch("/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+
+            const stocks = await response.json();
+            resultsContainer.innerHTML = ""; // Clear previous results
+
+            if (stocks.length === 0) {
+                hideSearchResults();
+                return;
+            }
+
+            resultsContainer.classList.add("show");
+            resultsContainer.style.display = "block"; // Ensure it shows
+
+            stocks.forEach(stock => {
+                const stockDiv = document.createElement("div");
+                stockDiv.textContent = `${stock.name} (${stock.symbol})`;
+                stockDiv.classList.add("search-item");
+                stockDiv.addEventListener("click", () => {
+                    updateStockDisplay(stock.symbol);
+                    hideSearchResults(); // Hide results after selection
+                    document.getElementById("search-bar").value = ""; // Clear input
+                });
+                resultsContainer.appendChild(stockDiv);
+            });
+
+        } catch (error) {
+            console.error("Error searching stocks:", error);
+        }
+    }, 300); // Adds slight delay to avoid excessive API calls
+}
+
+/* Function to hide search results */
+function hideSearchResults() {
+    const resultsContainer = document.getElementById("search-results");
+    resultsContainer.style.display = "none"; // Completely hide results
+    resultsContainer.classList.remove("show");
+}
+
+/* Hide search results when clicking outside */
+document.addEventListener("click", function(event) {
+    const searchBar = document.getElementById("search-bar");
+    const resultsContainer = document.getElementById("search-results");
+
+    if (!searchBar.contains(event.target) && !resultsContainer.contains(event.target)) {
+        hideSearchResults();
+    }
+});
+
+/* Keep search results visible when clicking inside search bar */
+document.getElementById("search-bar").addEventListener("click", function() {
+    const resultsContainer = document.getElementById("search-results");
+    if (resultsContainer.innerHTML.trim() !== "") {
+        resultsContainer.style.display = "block"; // Show again if there are results
+    }
+});
 
 
     </script>
