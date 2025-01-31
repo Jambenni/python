@@ -78,17 +78,32 @@ def index():
 @app.route("/stock-data/<ticker>")
 def get_stock_data(ticker):
     try:
+        # Step 1: Try without suffix (US stocks)
         stock = yf.Ticker(ticker)
-        historical_data = stock.history(period="1mo", interval="1d")  # Changed from "3wk" to "1mo"
+        historical_data = stock.history(period="1mo", interval="1d")
 
+        # Step 2: If data is empty, try different suffixes
         if historical_data.empty:
-            return jsonify({"error": "No data found for the ticker"}), 404
+            exchange_suffixes = [".NS", ".BO", ".L", ".T", ".F", ".DE"]  # NSE, BSE, LSE, JPX, FWB, XETRA
+            for suffix in exchange_suffixes:
+                new_ticker = ticker + suffix
+                stock = yf.Ticker(new_ticker)
+                historical_data = stock.history(period="1mo", interval="1d")
 
+                if not historical_data.empty:
+                    ticker = new_ticker  # Use the working ticker
+                    break  # Stop searching once we find valid data
+
+        # Step 3: If still no data, return an error
+        if historical_data.empty:
+            return jsonify({"error": f"No historical data found for ticker: {ticker}. It may be delisted or invalid."}), 404
+
+        # Step 4: Format data for the frontend
         formatted_data = []
         for date, row in historical_data.iterrows():
-            timestamp = int(pd.Timestamp(date).timestamp() * 1000)  # Convert to milliseconds
+            timestamp = int(pd.Timestamp(date).timestamp() * 1000)
             formatted_data.append({
-                "t": timestamp,  # Use milliseconds timestamp
+                "t": timestamp,
                 "o": float(row["Open"]),
                 "h": float(row["High"]),
                 "l": float(row["Low"]),
@@ -96,11 +111,9 @@ def get_stock_data(ticker):
             })
 
         return jsonify(formatted_data)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
 
 
 # Alpaca API Setup
@@ -166,6 +179,7 @@ def search_stocks():
     results = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify(results)
+
 
 @app.route("/stock-info/<ticker>")
 def get_stock_info(ticker):
